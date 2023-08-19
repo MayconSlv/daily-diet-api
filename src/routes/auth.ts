@@ -32,4 +32,38 @@ export async function authRoutes(app: FastifyInstance) {
 
     return { users }
   })
+
+  app.post('/login', async (request, reply) => {
+    const createUserBodySchema = z.object({
+      username: z.string(),
+      password: z.string(),
+    })
+
+    const { username, password } = createUserBodySchema.parse(request.body)
+
+    const user = await knex('users')
+      .where({
+        username,
+        password,
+      })
+      .first()
+
+    if (!user) {
+      return reply.status(404).send({ error: 'User not found' })
+    }
+
+    const token = app.jwt.sign(
+      {
+        username: user.username,
+      },
+      {
+        sub: user.id,
+        expiresIn: '30 days',
+      },
+    )
+
+    return {
+      token,
+    }
+  })
 }
