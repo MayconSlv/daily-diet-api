@@ -1,6 +1,11 @@
 import fastify from 'fastify'
+import { authRoutes } from './routes/auth'
 
 const app = fastify()
+
+app.register(authRoutes, {
+  prefix: 'auth',
+})
 
 app
   .listen({
