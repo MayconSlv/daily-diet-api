@@ -40,6 +40,51 @@ export async function mealRoutes(app: FastifyInstance) {
     return { meals }
   })
 
+  app.get('/stats', async (request) => {
+    const { sub } = request.user
+
+    const totalMeals = await knex('meals')
+      .where('session_id', sub)
+      .count({ total: '*' })
+    const totalMealInDiet = await knex('meals')
+      .where({
+        session_id: sub,
+        inside_diet: true,
+      })
+      .count({ in_diet: '*' })
+    const totalMealOutDiet = await knex('meals')
+      .where({
+        session_id: sub,
+        inside_diet: false,
+      })
+      .count({ out_diet: '*' })
+
+    let sequenceOfMealInDiet = 0
+    let currentvalue = 0
+
+    const mealInsideDiet = await knex('meals').where({
+      session_id: sub,
+      inside_diet: true,
+    })
+
+    for (const meal of mealInsideDiet) {
+      // eslint-disable-next-line eqeqeq
+      if (meal.inside_diet == true) {
+        currentvalue++
+        sequenceOfMealInDiet = Math.max(sequenceOfMealInDiet, currentvalue)
+      } else {
+        currentvalue = 0
+      }
+    }
+
+    return {
+      totalMeals,
+      totalMealInDiet,
+      totalMealOutDiet,
+      sequenceOfMealInDiet,
+    }
+  })
+
   app.get('/:id', async (request) => {
     const createMealParamasSchema = z.object({
       id: z.string().uuid(),
