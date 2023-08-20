@@ -43,15 +43,17 @@ export async function mealRoutes(app: FastifyInstance) {
   app.get('/stats', async (request) => {
     const { sub } = request.user
 
-    const totalMeals = await knex('meals')
+    const totalMealsCount = await knex('meals')
       .where('session_id', sub)
       .count({ total: '*' })
+
     const totalMealInDiet = await knex('meals')
       .where({
         session_id: sub,
         inside_diet: true,
       })
       .count({ in_diet: '*' })
+
     const totalMealOutDiet = await knex('meals')
       .where({
         session_id: sub,
@@ -59,29 +61,28 @@ export async function mealRoutes(app: FastifyInstance) {
       })
       .count({ out_diet: '*' })
 
-    let sequenceOfMealInDiet = 0
-    let currentvalue = 0
+    let currentCount = 0
+    let maxCount = 0
 
-    const mealInsideDiet = await knex('meals').where({
+    const totalMeal = await knex('meals').where({
       session_id: sub,
-      inside_diet: true,
     })
 
-    for (const meal of mealInsideDiet) {
+    for (const meal of totalMeal) {
       // eslint-disable-next-line eqeqeq
-      if (meal.inside_diet == true) {
-        currentvalue++
-        sequenceOfMealInDiet = Math.max(sequenceOfMealInDiet, currentvalue)
+      if (meal.inside_diet === 1) {
+        currentCount++
+        maxCount = Math.max(maxCount, currentCount)
       } else {
-        currentvalue = 0
+        currentCount = 0
       }
     }
 
     return {
-      totalMeals,
+      totalMealsCount,
       totalMealInDiet,
       totalMealOutDiet,
-      sequenceOfMealInDiet,
+      maxCount,
     }
   })
 
